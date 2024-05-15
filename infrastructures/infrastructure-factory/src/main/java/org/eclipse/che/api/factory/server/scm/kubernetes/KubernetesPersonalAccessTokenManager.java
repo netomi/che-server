@@ -212,7 +212,7 @@ public class KubernetesPersonalAccessTokenManager implements PersonalAccessToken
               PersonalAccessToken personalAccessToken =
                   new PersonalAccessToken(
                       personalAccessTokenParams.getScmProviderUrl(),
-                      getScmProviderName(personalAccessTokenParams),
+                      personalAccessTokenParams.getScmProviderName(),
                       secretAnnotations.get(ANNOTATION_CHE_USERID),
                       personalAccessTokenParams.getOrganization(),
                       scmUsername.get(),
@@ -242,20 +242,6 @@ public class KubernetesPersonalAccessTokenManager implements PersonalAccessToken
     return Optional.empty();
   }
 
-  /**
-   * Returns the name of the SCM provider. If the name is not set, the name of the token is used.
-   * This is used to support back compatibility with the old token secrets, which do not have the
-   * 'che.eclipse.org/scm-provider-name' annotation.
-   *
-   * @param params the parameters of the personal access token
-   * @return the name of the SCM provider
-   */
-  private String getScmProviderName(PersonalAccessTokenParams params) {
-    return isNullOrEmpty(params.getScmProviderName())
-        ? params.getScmTokenName()
-        : params.getScmProviderName();
-  }
-
   private boolean deleteSecretIfMisconfigured(Secret secret) throws InfrastructureException {
     Map<String, String> secretAnnotations = secret.getMetadata().getAnnotations();
     LOG.debug("Secret annotations: {}", secretAnnotations);
@@ -263,8 +249,7 @@ public class KubernetesPersonalAccessTokenManager implements PersonalAccessToken
     LOG.debug("SCM server URL: {}", configuredScmServerUrl);
     String configuredCheUserId = secretAnnotations.get(ANNOTATION_CHE_USERID);
     LOG.debug("Che user ID: {}", configuredCheUserId);
-    String configuredOAuthProviderName =
-        secretAnnotations.get(ANNOTATION_SCM_PERSONAL_ACCESS_TOKEN_NAME);
+    String configuredOAuthProviderName = secretAnnotations.get(ANNOTATION_SCM_PROVIDER_NAME);
     LOG.debug("OAuth provider name: {}", configuredOAuthProviderName);
 
     // if any of the required annotations is missing, the secret is not valid
